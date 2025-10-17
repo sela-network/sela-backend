@@ -1,0 +1,23 @@
+{
+  "ai_canister": {
+    "ic": "pa53t-mqaaa-aaaad-qhlbq-cai"
+  },
+  "dashboard": {
+    "ic": "f2gg7-oyaaa-aaaad-qhkya-cai"
+  },
+  "db": {
+    "ic": "f5hal-daaaa-aaaad-qhkyq-cai"
+  },
+  "ic_oss_bucket": {
+    "ic": "ph45h-biaaa-aaaad-qhlba-cai"
+  },
+  "ic_oss_can": {
+    "ic": "po7w3-xaaaa-aaaad-qhlaq-cai"
+  },
+  "nodeCanister": {
+    "ic": "fuelx-viaaa-aaaad-qhkza-cai"
+  },
+  "rpcCanister": {
+    "ic": "orxfm-uyaaa-aaaad-qhlea-cai"
+  }
+}

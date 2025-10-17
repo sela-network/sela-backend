@@ -1,0 +1,421 @@
+// Embedded Swagger content for Docker deployment
+export const EMBEDDED_SWAGGER_UI = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sela Network API Documentation</title>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui.css" />
+    <style>
+        html { box-sizing: border-box; overflow: -moz-scrollbars-vertical; overflow-y: scroll; }
+        *, *:before, *:after { box-sizing: inherit; }
+        body { margin:0; background: #fafafa; }
+        .swagger-ui .topbar { background-color: #2c3e50; }
+        .swagger-ui .topbar .download-url-wrapper,
+        .swagger-ui .topbar .download-url-button { display: none !important; }
+        .swagger-ui .info .title { color: #2c3e50; }
+        .swagger-ui .scheme-container { background: #2c3e50; padding: 10px 0; }
+        /* Ensure authentication modal is visible */
+        .swagger-ui .auth-container { display: block !important; }
+    </style>
+</head>
+<body>
+    <div id="swagger-ui"></div>
+    <script src="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui-bundle.js"></script>
+    <script src="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui-standalone-preset.js"></script>
+    <script>
+        window.onload = function() {
+            // Auto-detect the current server URL
+            const currentHost = window.location.host;
+            const currentProtocol = window.location.protocol;
+            const currentServer = currentProtocol + '//' + currentHost;
+            
+            const ui = SwaggerUIBundle({
+                url: '/swagger.yaml',
+                dom_id: '#swagger-ui',
+                deepLinking: true,
+                presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
+                plugins: [SwaggerUIBundle.plugins.DownloadUrl],
+                layout: "StandaloneLayout",
+                tryItOutEnabled: true,
+                docExpansion: "list",
+                defaultModelsExpandDepth: 1,
+                defaultModelExpandDepth: 1,
+                // Override the servers to use only the current server
+                onComplete: function() {
+                    // Keep the server selection dropdown visible for authentication
+                    // Only hide the YAML URL input and download button
+                    const downloadWrapper = document.querySelector('.swagger-ui .topbar .download-url-wrapper');
+                    const downloadButton = document.querySelector('.swagger-ui .topbar .download-url-button');
+                    if (downloadWrapper) downloadWrapper.style.display = 'none';
+                    if (downloadButton) downloadButton.style.display = 'none';
+                },
+                requestInterceptor: function(request) {
+                    request.headers['Access-Control-Allow-Origin'] = '*';
+                    request.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
+                    request.headers['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, Content-Type, Accept, Authorization';
+                    return request;
+                }
+            });
+        };
+    </script>
+</body>
+</html>`;
+
+export const EMBEDDED_SWAGGER_YAML = `openapi: 3.0.3
+info:
+  title: Sela Network API
+  description: |
+    API for client registration and URL scraping operations.
+    
+    ## Authentication
+    Most endpoints require API key authentication via the \`Authorization\` header. 
+    Register a client using the \`/api/rpc/registerClient\` endpoint to obtain an API key.
+  version: 1.0.0
+  contact:
+    name: Sela Network
+    email: contact@sela.network
+
+servers:
+  - url: /
+    description: Current server
+
+paths:
+  /api/rpc/registerClient:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new client and generate API key
+      description: |
+        Register a new client with the system and receive an API key for authentication.
+        The API key will be required for all subsequent authenticated requests.
+      operationId: registerClient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - uuid
+              properties:
+                uuid:
+                  type: string
+                  description: Unique user principal ID for the client
+                  example: "user-principal-id-12345"
+                  pattern: "^[a-zA-Z0-9-_]+$"
+            examples:
+              basic_registration:
+                summary: Basic client registration
+                value:
+                  uuid: "user-principal-id-12345"
+              ic_principal:
+                summary: Internet Computer Principal ID
+                value:
+                  uuid: "rdmx6-jaaaa-aaaah-qcaiq-cai"
+      responses:
+        '200':
+          description: Client registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Client registered successfully"
+                  data:
+                    type: object
+                    properties:
+                      function:
+                        type: string
+                        example: "Register"
+                      message:
+                        type: string
+                        example: "API key generated"
+                      apiKey:
+                        type: string
+                        description: Generated API key for authentication
+                        example: "abcd1234efgh5678ijkl9012mnop3456"
+                      status:
+                        type: string
+                        example: "OK"
+              examples:
+                success:
+                  summary: Successful registration
+                  value:
+                    success: true
+                    message: "Client registered successfully"
+                    data:
+                      function: "Register"
+                      message: "API key generated"
+                      apiKey: "abcd1234efgh5678ijkl9012mnop3456"
+                      status: "OK"
+        '400':
+          description: Bad request - Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/rpc/scrapeUrl:
+    post:
+      tags:
+        - Scraping
+      summary: Scrape URL with real-time processing
+      description: |
+        One-stop scraping API that creates a job, assigns it to an optimal node, and waits for the result.
+        
+        **Supported Scrape Types:**
+        - \`TWITTER_PROFILE\` - Scrape Twitter user profiles
+        - \`TWITTER_POST\` - Scrape Twitter posts
+        - \`HTML\` - HTML content scraping
+        
+        **Principal ID Assignment:**
+        To assign a job to a specific client, include the \`principalId\` field in the request body.
+        This will route the job to that specific client instead of finding the optimal node automatically.
+      operationId: scrapeUrl
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - url
+                - scrapeType
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  description: Target URL to scrape
+                  example: "https://twitter.com/elonmusk"
+                scrapeType:
+                  type: string
+                  enum: [TWITTER_PROFILE, TWITTER_POST, HTML]
+                  description: Type of scraping to perform
+                  example: "TWITTER_PROFILE"
+                timeoutMs:
+                  type: integer
+                  minimum: 10000
+                  maximum: 900000
+                  default: 60000
+                  description: Timeout in milliseconds (10s to 15min)
+                  example: 60000
+                principalId:
+                  type: string
+                  description: Optional specific client principal ID to assign the job to
+                  example: "specific-client-principal-id"
+                postCount:
+                  type: integer
+                  minimum: 0
+                  default: 0
+                  description: Number of posts to scrape (for TWITTER_PROFILE)
+                  example: 10
+                replyCount:
+                  type: integer
+                  minimum: 0
+                  default: 0
+                  description: Number of replies to scrape (for TWITTER_POST)
+                  example: 5
+                scrollPauseTime:
+                  type: integer
+                  minimum: 0
+                  default: 0
+                  description: Pause time between scrolls in milliseconds
+                  example: 2000
+            examples:
+              twitter_profile:
+                summary: Scrape Twitter profile
+                value:
+                  url: "https://twitter.com/elonmusk"
+                  scrapeType: "TWITTER_PROFILE"
+                  timeoutMs: 60000
+                  postCount: 10
+                  scrollPauseTime: 2000
+              twitter_post:
+                summary: Scrape Twitter posts
+                value:
+                  url: "https://twitter.com/elonmusk/status/1234567890"
+                  scrapeType: "TWITTER_POST"
+                  timeoutMs: 60000
+                  replyCount: 5
+                  scrollPauseTime: 3000
+              specific_client:
+                summary: Assign to specific client
+                value:
+                  url: "https://twitter.com/elonmusk"
+                  scrapeType: "TWITTER_PROFILE"
+                  principalId: "specific-client-principal-id"
+                  timeoutMs: 60000
+                  postCount: 20
+                  scrollPauseTime: 1500
+      responses:
+        '200':
+          description: URL scraped successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "URL scraping completed successfully"
+                  data:
+                    type: object
+                    properties:
+                      function:
+                        type: string
+                        example: "ScrapeComplete"
+                      message:
+                        type: string
+                        example: "URL scraped successfully"
+                      jobId:
+                        type: string
+                        description: Unique job identifier
+                        example: "job_1705320600000_1234"
+                      url:
+                        type: string
+                        format: uri
+                        example: "https://twitter.com/elonmusk"
+                      scrapeType:
+                        type: string
+                        example: "TWITTER_PROFILE"
+                      result:
+                        description: Scraped content (varies by scrape type)
+                        oneOf:
+                          - type: object
+                            description: JSON object for structured data
+                          - type: string
+                            description: Raw text content
+                        example:
+                          username: "elonmusk"
+                          displayName: "Elon Musk"
+                          followers: 150000000
+                          verified: true
+                      user_principal_id:
+                        type: string
+                        example: "user-principal-id-12345"
+                      client_id:
+                        type: string
+                        example: "client-12345"
+                      state:
+                        type: string
+                        example: "completed"
+                      status:
+                        type: string
+                        example: "OK"
+                      completedAt:
+                        type: integer
+                        format: int64
+                        description: Completion timestamp in milliseconds
+                        example: 1705320600000
+                      resultSource:
+                        type: string
+                        enum: [job_result, stored_file, stored_file_raw]
+                        description: Source of the result data
+                        example: "job_result"
+                      pricing:
+                        type: object
+                        properties:
+                          price:
+                            type: number
+                            format: float
+                            description: Price in USDT
+                            example: 0.25
+                          objectsCount:
+                            type: integer
+                            description: Number of data objects scraped
+                            example: 150
+                          fileSizeKB:
+                            type: number
+                            format: float
+                            description: File size in kilobytes
+                            example: 12.5
+                          currency:
+                            type: string
+                            example: "USDT"
+        '400':
+          description: Bad request - Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid or missing API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '408':
+          description: Request timeout - Job execution failed or timed out
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Unprocessable entity - Scraping returned empty results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: |
+        API key for authentication. Can be provided in multiple formats:
+        - \`Authorization: your-api-key\`
+        - \`Authorization: Bearer your-api-key\`
+        - \`Authorization: ApiKey your-api-key\`
+        
+        Obtain an API key by registering a client using the \`/api/rpc/registerClient\` endpoint.
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - success
+        - message
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          description: Error message describing what went wrong
+          example: "An error occurred"
+        data:
+          type: object
+          nullable: true
+          description: Additional error data (if any)
+          example: null
+
+tags:
+  - name: Authentication
+    description: Client registration and API key management
+  - name: Scraping
+    description: URL scraping and data extraction operations`;

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sela Network API Documentation</title>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui.css" />
+    <style>
+        html {
+            box-sizing: border-box;
+            overflow: -moz-scrollbars-vertical;
+            overflow-y: scroll;
+        }
+        *, *:before, *:after {
+            box-sizing: inherit;
+        }
+        body {
+            margin:0;
+            background: #fafafa;
+        }
+        .swagger-ui .topbar {
+            background-color: #2c3e50;
+        }
+        .swagger-ui .topbar .download-url-wrapper {
+            display: none;
+        }
+        .swagger-ui .topbar .download-url-wrapper,
+        .swagger-ui .topbar .download-url-button {
+            display: none !important;
+        }
+        .swagger-ui .info .title {
+            color: #2c3e50;
+        }
+        .swagger-ui .scheme-container {
+            background: #2c3e50;
+            padding: 10px 0;
+        }
+        /* Ensure authentication modal is visible */
+        .swagger-ui .auth-container {
+            display: block !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="swagger-ui"></div>
+    <script src="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui-bundle.js"></script>
+    <script src="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui-standalone-preset.js"></script>
+    <script>
+        window.onload = function() {
+            // Auto-detect the current server URL
+            const currentHost = window.location.host;
+            const currentProtocol = window.location.protocol;
+            const currentServer = currentProtocol + '//' + currentHost;
+            
+            const ui = SwaggerUIBundle({
+                url: '/swagger.yaml',
+                dom_id: '#swagger-ui',
+                deepLinking: true,
+                presets: [
+                    SwaggerUIBundle.presets.apis,
+                    SwaggerUIStandalonePreset
+                ],
+                plugins: [
+                    SwaggerUIBundle.plugins.DownloadUrl
+                ],
+                layout: "StandaloneLayout",
+                tryItOutEnabled: true,
+                docExpansion: "list",
+                defaultModelsExpandDepth: 1,
+                defaultModelExpandDepth: 1,
+                // Override the servers to use only the current server
+                onComplete: function() {
+                    // Keep the server selection dropdown visible for authentication
+                    // Only hide the YAML URL input and download button
+                    const downloadWrapper = document.querySelector('.swagger-ui .topbar .download-url-wrapper');
+                    const downloadButton = document.querySelector('.swagger-ui .topbar .download-url-button');
+                    if (downloadWrapper) downloadWrapper.style.display = 'none';
+                    if (downloadButton) downloadButton.style.display = 'none';
+                },
+                requestInterceptor: function(request) {
+                    // Add CORS headers for local development
+                    request.headers['Access-Control-Allow-Origin'] = '*';
+                    request.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
+                    request.headers['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, Content-Type, Accept, Authorization';
+                    return request;
+                },
+                responseInterceptor: function(response) {
+                    return response;
+                }
+            });
+        };
+    </script>
+</body>
+</html>

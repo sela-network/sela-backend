@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: sela-redis
+    ports:
+      - "${REDIS_PORT:-6380}:${REDIS_PORT:-6380}"
+    volumes:
+      - redis_data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf --protected-mode no
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "${REDIS_PORT:-6380}", "-a", "${REDIS_PASSWORD:-sela123}", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    environment:
+      - REDIS_PORT=${REDIS_PORT:-6380}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-sela123}
+
+  hybrid-server:
+    build: .
+    container_name: sela-hybrid-server
+    ports:
+      - "${PORT:-8082}:${PORT:-8082}"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - PORT=${PORT:-8082}
+      - HOST=${HOST:-0.0.0.0}
+      - IC_URL=${IC_URL:-https://ic0.app}
+      - FETCH_ROOT_KEY=${FETCH_ROOT_KEY:-false}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-sela123}@redis:${REDIS_PORT:-6380}
+      - REDIS_HOST=redis
+      - REDIS_PORT=${REDIS_PORT:-6380}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-sela123}
+      - REDIS_DB=${REDIS_DB:-0}
+      - DEAD_TIMEOUT=${DEAD_TIMEOUT:-3600000}
+      - SESSION_TIMEOUT=${SESSION_TIMEOUT:-86400}
+      - USAGE_LIMIT=${USAGE_LIMIT:-10000}
+      - MAX_JOBS_PER_CLIENT=${MAX_JOBS_PER_CLIENT:-10}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - BLOCKCHAIN_ENABLED=${BLOCKCHAIN_ENABLED:-true}
+      - CANISTER_CONTROLLER_PEM=${CANISTER_CONTROLLER_PEM}
+      - REWARD_DISTRIBUTION_ENABLED=${REWARD_DISTRIBUTION_ENABLED:-true}
+      - REWARD_DISTRIBUTION_INTERVAL=${REWARD_DISTRIBUTION_INTERVAL:-"0 * * * *"}
+      - REWARD_LOG_DIRECTORY=${REWARD_LOG_DIRECTORY:-./logs/rewards}
+      - REWARD_MAX_LOG_FILES=${REWARD_MAX_LOG_FILES:-30}
+      - REWARD_MAX_LOG_SIZE_MB=${REWARD_MAX_LOG_SIZE_MB:-10}
+      - DATA_PATH=/app/data/redis
+      - CANISTER_STORAGE_STRATEGY=dual
+      - CANISTER_SYNC_ENABLED=true
+      - CANISTER_SYNC_INTERVAL=300000
+      - FILE_STORAGE_CANISTER_ID=qe3z4-yiaaa-aaaam-aeoyq-cai
+      - CANISTER_STORAGE_ENABLED=true
+
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:${PORT:-8082}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: sela-redis-commander
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:${REDIS_PORT:-6380}:${REDIS_DB:-0}:${REDIS_PASSWORD:-sela123}
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/redis
+

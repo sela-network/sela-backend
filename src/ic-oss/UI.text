@@ -1,0 +1,208 @@
+// Frontend JavaScript code : upload entire file at once
+async function uploadEntireFile(file) {
+  const reader = new FileReader();
+  
+  reader.onload = async function() {
+    const arrayBuffer = this.result;
+    const blob = new Uint8Array(arrayBuffer);
+    
+    // Create metadata
+    const metadata = {
+      name: file.name,
+      size: BigInt(file.size),
+      content_type: file.type || "application/octet-stream"
+    };
+    
+    // Call your canister's uploadFile function
+    const result = await yourCanister.uploadFile(metadata, [blob]);
+    
+    if ("ok" in result) {
+      console.log("File uploaded successfully with ID:", result.ok);
+      return result.ok; // This is your fileId
+    } else {
+      console.error("Upload failed:", result.err);
+      throw new Error(result.err);
+    }
+  };
+  
+  reader.readAsArrayBuffer(file);
+}
+
+
+Option 2: Upload a file in chunks (better for large files)
+// Frontend JavaScript code
+async function uploadFileInChunks(file, chunkSize = 500000) {
+  let fileId = null;
+  const totalChunks = Math.ceil(file.size / chunkSize);
+  
+  for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+    const start = chunkIndex * chunkSize;
+    const end = Math.min(start + chunkSize, file.size);
+    const chunk = file.slice(start, end);
+    
+    const reader = new FileReader();
+    const chunkBlob = await new Promise((resolve) => {
+      reader.onload = () => resolve(new Uint8Array(reader.result));
+      reader.readAsArrayBuffer(chunk);
+    });
+    
+    // Upload this chunk
+    const result = await yourCanister.uploadFileChunk(fileId, chunkIndex, chunkBlob);
+    
+    if ("ok" in result) {
+      fileId = result.ok; // Save the fileId returned from the first chunk
+      console.log(`Chunk ${chunkIndex + 1}/${totalChunks} uploaded`);
+    } else {
+      console.error(`Failed to upload chunk ${chunkIndex}:`, result.err);
+      throw new Error(result.err);
+    }
+  }
+  
+  console.log("File upload complete with ID:", fileId);
+  return fileId;
+}
+
+Retrieving File Content
+// Frontend JavaScript code
+async function getFileContent(fileId) {
+  const result = await yourCanister.getFileContent(fileId);
+  
+  if ("ok" in result) {
+    // result.ok contains the file data as a Blob
+    const blob = new Blob([result.ok], { 
+      type: "application/octet-stream" // You might want to store and retrieve the content type
+    });
+    
+    // You can now use this blob, e.g., create a download link
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = "downloaded-file"; // Ideally use the original filename
+    a.click();
+    
+    return blob;
+  } else {
+    console.error("Failed to retrieve file:", result.err);
+    throw new Error(result.err);
+  }
+}
+
+Getting File Metadata
+async function getFileMetadata(fileId) {
+  const metadata = await yourCanister.getFile(fileId);
+  
+  if (metadata) {
+    console.log("File metadata:", metadata);
+    return metadata;
+  } else {
+    console.error("File not found");
+    return null;
+  }
+}
+
+
+//test
+Testing File Upload from Terminal
+1. Create a test file
+
+echo '{
+  "name": "John Doe",
+  "age": 30,
+  "email": "johndoe@example.com",
+  "isActive": true,
+  "address": {
+    "street": "123 Main St",
+    "city": "New York",
+    "zipcode": "10001"
+  },
+  "hobbies": ["reading", "gaming", "traveling"],
+  "employment": {
+    "status": "Employed",
+    "company": "Tech Corp"
+  },
+  "membership": true
+}' > myfile.json
+
+
+echo "This is a test file" > test.txt
+HEX_CONTENT=$(xxd -p myfile.json | tr -d '\n')
+
+echo "$HEX_CONTENT"
+7b0a2020226d657373616765223a202254686973206973206120746573742066696c65222c0a202022637265617465644279223a202262617368222c0a20202276657273696f6e223a2022312e30222c0a20202274696d657374616d70223a2022323032352d30332d32395431323a32353a30362b30353a3330222c0a202022737461747573223a202273756363657373222c0a2020226964223a20312c0a202022616374697665223a20747275652c0a20202274616773223a205b2274657374222c20226a736f6e222c202262617368225d2c0a2020226e6f7465223a202267656e6572617465642066726f6d20434c49220a7d0a
+
+2. Upload the file using dfx
+
+# Convert the file to base64 for easier handling in the terminal)
+
+# Call your canister's uploadFile function
+dfx canister call bkyz2-fmaaa-aaaaa-qaaaq-cai uploadFile '(
+  record {
+    name = "test.json";
+    size = 19 : nat64;
+    content_type = opt "text/plain";
+    created_at = opt (1_000_000_000_000 : nat64);
+    modified_at = opt (1_000_000_000_000 : nat64);
+  },
+  vec { blob "'$(printf %s "$HEX_CONTENT" | xxd -r -p | base64)'" }
+)'
+
+The response should include a file ID in the format:
+
+(variant { ok = 1 : nat32 })
+
+3. Retrieve file content
+
+# Use the file ID from the previous step
+dfx canister call bkyz2-fmaaa-aaaaa-qaaaq-cai getFileContent '(3 : nat32)'
+The response should be:
+(variant { ok = blob "VGhpcyBpcyBhIHRlc3QgZmlsZQo=" })
+echo "ewogICJtZXNzYWdlIjogIlRoaXMgaXMgYSB0ZXN0IGZpbGUiLAogICJjcmVhdGVkQnkiOiAiYmFzaCIsCiAgInZlcnNpb24iOiAiMS4wIiwKICAidGltZXN0YW1wIjogIjIwMjUtMDMtMjlUMTI6MjU6MDYrMDU6MzAiLAogICJzdGF0dXMiOiAic3VjY2VzcyIsCiAgImlkIjogMSwKICAiYWN0aXZlIjogdHJ1ZSwKICAidGFncyI6IFsidGVzdCIsICJqc29uIiwgImJhc2giXSwKICAibm90ZSI6ICJnZW5lcmF0ZWQgZnJvbSBDTEkiCn0K" | base64 -d
+This is a test file
+
+dfx canister call bkyz2-fmaaa-aaaaa-qaaaq-cai getFileContent '(3 : nat32)' | grep -o '".*"' | sed 's/"//g' | base64 -d
+
+4. Get file metadata
+
+dfx canister call bkyz2-fmaaa-aaaaa-qaaaq-cai getFile '(3 : nat32)'
+
+For Larger Files (Chunk Upload)
+For larger files, you can upload in chunks:
+
+# First chunk (creates the file)
+dfx canister call bkyz2-fmaaa-aaaaa-qaaaq-cai uploadFileChunk '(
+  null,
+  0 : nat32,
+  blob "First chunk of data"
+)'
+
+# This will return a file ID, e.g., (variant { ok = 2 : nat32 })
+
+# Second chunk (append to existing file)
+dfx canister call bkyz2-fmaaa-aaaaa-qaaaq-cai uploadFileChunk '(
+  opt (2 : nat32),
+  1 : nat32,
+  blob "Second chunk of data"
+)'
+Testing Bucket Operations
+You can also test your bucket operations:
+
+# Create a file in the bucket
+dfx canister call bkyz2-fmaaa-aaaaa-qaaaq-cai adminSetManagers '(vec { principal "pxwer-c66zh-67kvk-sz4vq-ip27m-tysdt-6z6me-cfmdc-vpwq4-ciflt-yqe" })'
+
+dfx canister call bkyz2-fmaaa-aaaaa-qaaaq-cai createBucketFile '(
+  record {
+    name = "bucket-test.txt";
+    content_type = "text/plain";
+    parent = 0 : nat32;
+    size = opt (19 : nat64);
+    content = opt (blob "This is bucket test");
+    hash = null;
+    status = null;
+    dek = null;
+    custom = null;
+  },
+  null
+)'
+
+# List files in the bucket
+dfx canister call bkyz2-fmaaa-aaaaa-qaaaq-cai listBucketFiles '(0 : nat32, null, null, null)'

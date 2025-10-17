@@ -1,0 +1,77 @@
+dfx ledger balance 0f3c2bace5d00de383726cacbe8a2dfd30b552e83beb3142ce35938ae447af2c --network ic
+12.50000000 ICP
+
+dfx identity get-principal
+pxwer-c66zh-67kvk-sz4vq-ip27m-tysdt-6z6me-cfmdc-vpwq4-ciflt-yqe
+
+You need to convert some of your ICP tokens into cycles and create a new canister. Run the following command, replacing <principal-identifier> with your principal (you can get it with dfx identity get-principal), and <icp-tokens> with the amount of ICP you want to convert (e.g., 0.5)
+dfx ledger --network ic create-canister pxwer-c66zh-67kvk-sz4vq-ip27m-tysdt-6z6me-cfmdc-vpwq4-ciflt-yqe --amount 0.1
+
+dfx cycles balance --network ic // check cycle balance
+
+dfx cycles convert --amount 2.5 --network ic
+
+dfx canister create dashboard --network ic
+
+dfx canister create dashboard --network ic
+dfx canister --network ic deposit-cycles 500000000000 nodeCanisterLib
+dfx deploy --network ic rpcCanisterLib
+dfx deploy --network ic nodeCanisterLib
+
+
+ic_oss_can - 
+ic_oss_bucket - 
+ai_canister - 
+
+nodeCanisterSock - 
+nodeCanisterWebSocketCanister - 
+nodeCanisterLib - 
+nodeCanisterDB - 
+nodeCanister - 
+rpcCanisterSock - 
+rpcCanisterWebSocketCanister - 
+rpcCanisterLib - 
+rpcCanister - 
+rpcCanisterDB - 
+dashboard - 
+internetIdentity - 
+
+
+dfx canister stop nodeCanisterLib --network ic
+dfx canister delete nodeCanisterLib --network ic
+
+dfx canister logs  db --network ic
+
+//running logs
+while true; do
+  dfx canister logs nodeCanister --network ic
+  sleep 2
+done
+
+//check balance
+dfx canister status rpcCanister --network ic
+
+//deposit cycles in a canister
+dfx canister --network ic deposit-cycles 5024460772041 fuelx-viaaa-aaaad-qhkza-cai
+
+//add rewards to db
+dfx canister call nodeCanister addRewardsToDB '("fxbax-tkeko-ild3h-tiav3-xogaj-przy5-gwb4v-5kou7-ihvcy-3ldtq-gae", 1.45)'
+
+//add principal id for log viewing
+dfx canister update-settings db --add-log-viewer 6iw5z-i63r6-25cnl-abhol-t3hbr-rnuja-7bbbl-sqblh-2kqk5-lb3mm-eqe --network ic
+
+//add someone’s principal ID as a controller of a canister
+dfx canister update-settings <canister_name> --add-controller <principal_id>
+
+
+Deployed canisters.
+URLs:
+  Frontend canister via browser
+    dashboard: https://f2gg7-oyaaa-aaaad-qhkya-cai.icp0.io/
+  Backend canister via Candid interface:
+    ai_canister: https://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.icp0.io/?id=pa53t-mqaaa-aaaad-qhlbq-cai
+    db: https://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.icp0.io/?id=f5hal-daaaa-aaaad-qhkyq-cai
+    ic_oss_bucket: https://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.icp0.io/?id=ph45h-biaaa-aaaad-qhlba-cai
+    ic_oss_can: https://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.icp0.io/?id=po7w3-xaaaa-aaaad-qhlaq-cai
+    nodeCanister: https://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.icp0.io/?id=fuelx-viaaa-aaaad-qhkza-cai
+    rpcCanister: https://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.icp0.io/?id=orxfm-uyaaa-aaaad-qhlea-cai

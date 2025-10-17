@@ -1,0 +1,98 @@
+{
+  "canisters": {
+    "ic_oss_can": {
+      "type": "custom",
+      "wasm": "ic-oss/target/wasm32-unknown-unknown/release/ic_oss_can.wasm",
+      "candid": "ic_oss_can.did",
+      "metadata": [
+        {
+          "name": "candid:service"
+        }
+      ]
+    },
+    "ic_oss_bucket": {
+      "type": "custom",
+      "wasm": "ic-oss/target/wasm32-unknown-unknown/release/ic_oss_bucket.wasm",
+      "candid": "ic_oss_bucket.did",
+      "metadata": [
+        {
+          "name": "candid:service"
+        }
+      ]
+    },
+    "ai_canister": {
+      "main": "src/ic-oss/main.mo",
+      "type": "motoko",
+      "dependencies": ["ic_oss_can", "ic_oss_bucket"],
+      "declarations": {
+        "output": "src/declarations/ic-oss",
+        "node_compatibility": true
+      }
+    },
+    "db": {
+      "main": "src/db/db.mo",
+      "type": "motoko",
+      "http": {
+        "port": 4943
+      },
+      "declarations": {
+        "output": "src/declarations/db",
+        "node_compatibility": true
+      }
+    },
+    "nodeCanister": {
+      "main": "src/nodeCanister/main.mo",
+      "type": "motoko",
+      "environment": {
+        "NODE_CANISTER_ID": "process.env.NODE_CANISTER_ID"
+      },
+      "http": {
+        "port": 4943
+      },
+      "declarations": {
+        "output": "src/declarations/nodeCanister",
+        "node_compatibility": true
+      }
+    },
+    "rpcCanister": {
+      "main": "src/rpcCanister/main.mo",
+      "type": "motoko",
+      "environment": {
+        "RPC_CANISTER_ID": "process.env.RPC_CANISTER_ID"
+      },
+      "http": {
+        "port": 4943
+      },
+      "declarations": {
+        "output": "src/declarations/rpcCanister",
+        "node_compatibility": true
+      }
+    },
+    "internetIdentity": {
+      "type": "custom",
+      "candid": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity.did",
+      "wasm": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity_dev.wasm.gz",
+      "remote": {
+        "id": {
+          "ic": "rdmx6-jaaaa-aaaaa-aaadq-cai"
+        }
+      },
+      "frontend": {}
+    },
+    "dashboard": {
+      "dependencies": ["nodeCanister", "internetIdentity"],
+      "frontend": {
+        "entrypoint": "src/dashboard/index.html"
+      },
+      "source": ["src/dashboard/dist", "dist/"],
+      "type": "assets"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": "mops sources"
+    }
+  },
+  "version": 1
+}

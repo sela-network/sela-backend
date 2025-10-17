@@ -1,0 +1,56 @@
+html,
+body {
+  margin: 0;
+  width: 100vw;
+  background-color: #000;
+}
+
+.ant-layout-sider {
+  background-color: #131313;
+  padding: 64px 16px 64px 16px;
+}
+
+/* index.css or global styles */
+@font-face {
+  font-family: 'Urbanist';
+  src: url('./fonts/Urbanist/Urbanist-Bold.ttf') format('truetype');
+  font-weight: bold;
+}
+
+@font-face {
+  font-family: 'Urbanist';
+  src: url('./fonts/Urbanist/Urbanist-Light.ttf') format('truetype');
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Urbanist';
+  src: url('./fonts/Urbanist/Urbanist-Regular.ttf') format('truetype');
+  font-weight: normal;
+}
+
+@font-face {
+  font-family: 'Urbanist';
+  src: url('./fonts/Urbanist/Urbanist-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+}
+
+.ant-table-thead>tr>th {
+  font-family: 'Urbanist';
+  font-weight: normal;
+  font-size: 14px;
+}
+
+/* .ant-table-thead>tr>th, */
+.ant-table-tbody>tr>td {
+  border: none !important;
+  border-collapse: collapse;
+}
+
+.ant-modal {
+  border-radius: 30px !important;
+}
+
+.ant-modal-content {
+  border-radius: 30px !important;
+}

@@ -1,0 +1,26 @@
+type FileMetadata = record {
+  name: text;
+  content_type: text;
+  size: nat;
+  user_principal_id: text;
+  job_id: text;
+  created_at: int;
+  original_file_id: text;
+};
+
+type FileRecord = record {
+  content: text;
+  metadata: FileMetadata;
+  created_at: int;
+  updated_at: int;
+};
+
+service : {
+  store_file: (text, text, FileMetadata) -> (record { file_key: text; success: bool });
+  get_file: (text) -> (record { content: text; metadata: FileMetadata; success: bool });
+  list_files_by_user: (text) -> (vec text);
+  list_files_by_job: (text) -> (vec text);
+  get_file_info: (text) -> (opt FileMetadata);
+  get_storage_stats: () -> (record { total_files: nat; total_size: nat });
+  health_check: () -> (record { status: text; timestamp: int });
+}

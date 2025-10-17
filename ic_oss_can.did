@@ -1,0 +1,78 @@
+type CreateFileInput = record {
+  dek : opt blob;
+  status : opt int8;
+  content : opt blob;
+  custom : opt vec record { text; MetadataValue };
+  hash : opt blob;
+  name : text;
+  size : opt nat64;
+  content_type : text;
+  parent : nat32;
+};
+type CreateFileOutput = record { id : nat32; created_at : nat64 };
+type FileInfo = record {
+  ex : opt vec record { text; MetadataValue };
+  id : nat32;
+  dek : opt blob;
+  status : int8;
+  updated_at : nat64;
+  custom : opt vec record { text; MetadataValue };
+  hash : opt blob;
+  name : text;
+  size : nat64;
+  content_type : text;
+  created_at : nat64;
+  filled : nat64;
+  chunks : nat32;
+  parent : nat32;
+};
+type FileMetadata = record {
+  updated_at : nat64;
+  hash : opt blob;
+  name : text;
+  size : nat64;
+  content_type : text;
+  created_at : nat64;
+  filled : nat64;
+  chunks : nat32;
+};
+type MetadataValue = variant { Int : int; Nat : nat; Blob : blob; Text : text };
+type Result = variant { Ok; Err : text };
+type Result_1 = variant { Ok : nat32; Err : text };
+type Result_2 = variant { Ok : CreateFileOutput; Err : text };
+type Result_3 = variant { Ok : bool; Err : text };
+type Result_4 = variant { Ok : blob; Err : text };
+type Result_5 = variant { Ok : vec FileInfo; Err : text };
+type Result_6 = variant { Ok : UpdateFileChunkOutput; Err : text };
+type Result_7 = variant { Ok : UpdateFileOutput; Err : text };
+type UpdateFileChunkInput = record {
+  id : nat32;
+  chunk_index : nat32;
+  content : blob;
+};
+type UpdateFileChunkOutput = record { updated_at : nat64; filled : nat64 };
+type UpdateFileInput = record {
+  id : nat32;
+  status : opt int8;
+  custom : opt vec record { text; MetadataValue };
+  hash : opt blob;
+  name : opt text;
+  size : opt nat64;
+  content_type : opt text;
+};
+type UpdateFileOutput = record { updated_at : nat64 };
+service : {
+  add_chunk : (nat32, nat32, blob) -> (Result);
+  add_file : (FileMetadata) -> (Result_1);
+  admin_set_managers : (vec principal) -> (Result);
+  admin_set_visibility : (nat8) -> (Result);
+  create_file : (CreateFileInput, opt blob) -> (Result_2);
+  delete_file : (nat32, opt blob) -> (Result_3);
+  get_file : (nat32) -> (opt FileMetadata) query;
+  get_full_chunks : (nat32) -> (Result_4) query;
+  is_manager : (principal) -> (Result) query;
+  list_files : (nat32, opt nat32, opt nat32, opt blob) -> (Result_5) query;
+  set_max_file_size : (nat64) -> (Result);
+  update_file_chunk : (UpdateFileChunkInput, opt blob) -> (Result_6);
+  update_file_info : (UpdateFileInput, opt blob) -> (Result_7);
+}

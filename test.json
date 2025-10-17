@@ -1,0 +1,11 @@
+{
+  "message": "This is a test file",
+  "createdBy": "bash",
+  "version": "1.0",
+  "timestamp": "2025-03-29T12:25:06+05:30",
+  "status": "success",
+  "id": 1,
+  "active": true,
+  "tags": ["test", "json", "bash"],
+  "note": "generated from CLI"
+}
